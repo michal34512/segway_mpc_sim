@@ -26,8 +26,8 @@ print(" F8 : add pertubation (push the robot)")
 print(" F9 : ON/OFF follow the robot")
 
 # -- Programme variables --
-ref_time, FPS = 0, 10
-dt_ctrl = 1.0 / FPS  # Czas trwania jednej pętli sterowania (100ms)
+ref_time, FPS = 0, 50
+dt_ctrl = 1.0 / FPS  # Czas trwania jednej pętli sterowania (20ms)
 
 CameraPosX, CameraPosY, CameraPosZ = 0.0, 3.0, 10.0
 ViewUpX, ViewUpY, ViewUpZ = 0.0, 1.0, 0.0
@@ -58,71 +58,71 @@ current_turn = 0
 def initMPC():
     global myMPC, myBot, dt_ctrl
 
-    Mb = myBot.Mb
-    Mw = myBot.Mw
-    d = myBot.d
-    R = myBot.R
-    L = myBot.L
-    Iwx = myBot.Iwx
-    Iy = myBot.Iy
-    g = myBot.g
-
-    DEN = 4*Iwx*R + 2*Iy*R + 2*Mb * \
-        (R**3) + 4*Mb*(R**2)*d + 2*Mb*R*(d**2) + 4*Mw*(R**3)
-    K_phi = (2 * Mb * R * d * g) / DEN
-    K_u = (4*Iwx + 2*Mb*(R**2) + 2*Mb*R*d + 4*Mw*(R**2)) / DEN
-
-    # Macierz A (Rozmiar 6x6)
-    # Stany: [X, X_dot, Phi, Phi_dot, Psi, Psi_dot]
-    A_c = np.zeros((6, 6))
-    A_c[0, 1] = 1.0          # Prędkość wpływa na pozycję X
-    A_c[2, 3] = 1.0          # Prędkość kątowa wpływa na kąt Phi
-    A_c[3, 2] = K_phi        # Grawitacja ciągnie wahadło w dół
-    A_c[4, 5] = 1.0          # Prędkość skręcania wpływa na kąt skrętu Psi
-
-    # Macierz B (Rozmiar 6x2)
-    # Wejścia: [a_L, a_R] (Liniowe przyśpieszenie lewego i prawego koła)
-    B_c = np.zeros((6, 2))
-    B_c[1, 0] = 0.5          # Lewe koło ciągnie środek ciężkości o połowę
-    B_c[1, 1] = 0.5          # Prawe koło ciągnie środek ciężkości o połowę
-    B_c[3, 0] = -0.5 * K_u   # Lewe koło podjeżdża pod opadający środek
-    B_c[3, 1] = -0.5 * K_u   # Prawe koło podjeżdża pod opadający środek
-    # Lewe koło do przodu -> skręcamy w prawo (ujemne psi)
-    B_c[5, 0] = -1.0 / L
-    # Prawe koło do przodu -> skręcamy w lewo (dodatnie psi)
-    B_c[5, 1] = 1.0 / L
-
-    A_d = np.eye(6) + A_c * dt_ctrl
-    B_d = B_c * dt_ctrl
-
-    myMPC = MPC(A_d, B_d, N=10, dt=dt_ctrl)
+    # Horyzont 40 kroków przy 50Hz daje predykcję na 0.8 sekundy
+    myMPC = MPC(N=40, dt=dt_ctrl)
 
     # Wagi: [X, X_dot, Phi, Phi_dot, Psi, Psi_dot]
     # Używamy tylko wag prędkości (X i Psi) oraz potężnej wagi dla kąta pochylenia
     myMPC.setWeights([0.0, 2.0, 100.0, 5.0, 0.0, 2.0], R_diag=[0.1, 0.1])
-    print("\tMIMO MPC (6x6) Initialized!")
+    print("\tNieliniowy MIMO MPC (ERK) Initialized!")
 
 
 def correction():
     global myBot, F, myMPC, use_mpc
     global speed, turn
 
+    # if use_mpc and myMPC is not None:
+
+    #     # Testowanie naszej "ósemki" przy użyciu pełnego MIMO
+    #     time_s = glutGet(GLUT_ELAPSED_TIME) / 1000.0
+    #     target_speed = 0.4
+    #     target_turn = 1.2 * sin(0.5 * time_s)
+
+    #     # Nowy wektor stanu (6-wymiarowy)
+    #     # Przekazujemy błędy prędkości, aby MPC sprowadził je do "zera"
+    #     state = np.array([
+    #         0.0,
+    #         myBot.xp - target_speed,
+    #         myBot.phi,
+    #         myBot.phip,
+    #         0.0,
+    #         myBot.psip - target_turn
+    #     ])
+
+    #     # MIMO MPC wypluwa teraz 2 wartości - optymalne przyśpieszenie lewego i prawego koła
+    #     u_opt = myMPC.update(state)
+    #     a_L = u_opt[0]
+    #     a_R = u_opt[1]
+
+    #     # 1. Obecne prędkości liniowe kół (obliczane z bazy robota)
+    #     v_L = myBot.xp - (myBot.L * myBot.psip) / 2.0
+    #     v_R = myBot.xp + (myBot.L * myBot.psip) / 2.0
+
+    #     # 2. Całkujemy wyznaczone przez MPC przyśpieszenia, by dostać nowe prędkości liniowe kół
+    #     v_L_target = v_L + a_L * dt_ctrl
+    #     v_R_target = v_R + a_R * dt_ctrl
+
+    #     # 3. Dodajemy poprawkę kinematyczną na toczenie opadającego robota (phip)
+    #     omega_L = v_L_target / myBot.R - myBot.phip
+    #     omega_R = v_R_target / myBot.R - myBot.phip
+
+    #     F = [omega_L, omega_R]
+    # else:
+    #     F = [0, 0]
     if use_mpc and myMPC is not None:
 
         # Testowanie naszej "ósemki" przy użyciu pełnego MIMO
         time_s = glutGet(GLUT_ELAPSED_TIME) / 1000.0
-        target_speed = 0.4
-        target_turn = 1.2 * sin(0.5 * time_s)
 
         # Nowy wektor stanu (6-wymiarowy)
         # Przekazujemy błędy prędkości, aby MPC sprowadził je do "zera"
         state = np.array([
             0.0,
-            myBot.xp - target_speed,
+            myBot.xp,
             myBot.phi,
             myBot.phip,
             0.0,
-            myBot.psip - target_turn
+            myBot.psip
         ])
 
         # MIMO MPC wypluwa teraz 2 wartości - optymalne przyśpieszenie lewego i prawego koła
@@ -152,15 +152,16 @@ def animation():
     delta_t = 0.001
 
     if glutGet(GLUT_ELAPSED_TIME)-ref_time > (dt_ctrl)*1000:
-        # Pętla fizyki działa 100 razy na klatkę (100 * 0.001s = 0.1s)
+        # Obliczamy, ile drobnych kroków fizyki (delta_t) przypada na jedną klatkę sterowania (dt_ctrl)
+        steps = int(dt_ctrl / delta_t)
         dst = 0
-        for i in range(0, 100):
+        for i in range(0, steps):
             myBot.dynamics(delta_t, F)
             dst = (myBot.xp * delta_t)
             posx += dst*cos(myBot.psi)
             posz += (-dst*sin(myBot.psi))
 
-        # Obliczamy nowe sterowanie raz na 100 milisekund (jak w prawdziwym bocie)
+        # Obliczamy nowe sterowanie z użyciem MPC
         correction()
         glutPostRedisplay()
         ref_time = glutGet(GLUT_ELAPSED_TIME)
@@ -348,7 +349,7 @@ def SpecialFunc(skey, x, y):
         elif skey == GLUT_KEY_F7:
             myBot.phi += (10*pi/180)
         elif skey == GLUT_KEY_F8:
-            myBot.phi += (-20*pi/180)
+            myBot.phi += (-10*pi/180)
         elif skey == GLUT_KEY_F9:
             follow_robot = not (follow_robot)
             print("\tFollowing robot : " + str(follow_robot))

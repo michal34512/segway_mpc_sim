@@ -60,7 +60,7 @@ class IBalancingBot:
         self.psipp = None  # rotation angular acceleration of the robot
 
         # variables for the drawing
-        self.d_rw = None       # wheel radius
+        self.d_rw = None       # wheel diameter
         self.d_dstw = None     # distance between the wheels
         self.d_widthw = None   # width of a wheel
         self.d_heightp = None  # height of the pendulum
@@ -74,35 +74,44 @@ class IBalancingBot:
             The value presented here are the value from the paper where the 
             model come from.
         """
-        # variables for the model
-        self.Mb = 13.3    # kg      mass of main body (pendulum)
-        self.Mw = 1.89    # kg      mass of wheels
-        self.d = 0.13     # m       center of mass from base
-        self.R = 0.130    # m       Radius of wheel
-        self.L = 0.325    # m       Distance between the wheels
-        self.Ix = 0.1935  # kg.m^2  Moment of inertia of body x-axis
-        self.Iz = 0.3379  # kg.m^2  Moment of inertia of body z-axis
-        self.Iy = 0.3379  # kg.m^2  Moment of inertia of body y-axis : NOT A VALUE FROM THE PAPER
-        self.Iwx = 0.1229  # kg.m^2  Moment of inertia of wheel according to center
-        self.Iwz = 0.1000  # kg.m^2  Moment of inertia of wheel according to the Z-axis
-        self.g = 9.81     # m/s^2   Acceleration due to gravity
+        self.Mb = 1.045     # kg      Masa korpusu (z Twoich danych)
+        self.Mw = 0.1       # kg      Masa kół (szacowana na 100g/szt)
+        # m       Odległość osi od środka ciężkości (z Twoich danych)
+        self.d = 0.1788
+        self.R = 0.04       # m       Promień koła (średnica 80mm)
+        self.L = 0.2        # m       Rozstaw kół (200mm)
+        self.g = 9.81       # m/s^2   Przyspieszenie ziemskie
 
-        self.phi = 2*pi/180  # the pendulum is initially unstable
+        # --- MOMENTY BEZWŁADNOŚCI (z rysunku: kg.mm^2 zamienione na kg.m^2) ---
+        # Wartości dzielimy przez 1,000,000
+        # kg.m^2  Moment bezwładności osi X (pochylenie - Ixx)
+        self.Ix = 0.0011695
+        self.Iz = 0.0027748  # kg.m^2  Moment bezwładności osi Z (Izz)
+        # kg.m^2  Moment bezwładności osi Y (obrót pionowy - Iyy)
+        self.Iy = 0.0019317
+
+        # Bezwładność koła (obliczamy jako walec: 1/2 * m * r^2)
+        # Ia (Iwx) to bezwładność rotacyjna koła wokół własnej osi
+        self.Ia = 0.5 * self.Mw * (self.R**2)
+        self.Iwx = self.Ia
+        self.Iwz = 0.0001    # Szacowana bezwładność koła wokół osi pionowej
+
+        # --- STAN POCZĄTKOWY ---
+        self.phi = 0  # kąt początkowy
         self.phip = 0
-
         self.x = 0
         self.xp = 0
-
         self.psi = 0
         self.psip = 0
 
-        # variables for the drawing
-        self.d_rw = self.R
+        # --- PARAMETRY WIZUALIZACJI (OpenGL) ---
+        # OpenGL rysuje to jako średnicę, więc musimy pomnożyć promień x2
+        self.d_rw = self.R * 2.0
         self.d_dstw = self.L
-        self.d_widthw = 0.01
-        self.d_heightp = self.d
-        self.d_centerp = self.d
-        self.d_widthp = 0.01
+        self.d_widthw = 0.02
+        self.d_heightp = self.d + 0.02  # Wizualnie korpus kończy się niewiele ponad CoM
+        self.d_centerp = self.d  # Zielona kula znajdzie się dokładnie w Twoim CoM
+        self.d_widthp = 0.015
 
         # to deal with the fact that the pendulum can not be lower than the ground
         # we compute the maximal possible angle for the pendulum
