@@ -58,8 +58,9 @@ current_turn = 0
 def initMPC():
     global myMPC, myBot, dt_ctrl
 
-    # Horyzont 40 kroków przy 50Hz daje predykcję na 0.8 sekundy
-    myMPC = MPC(N=40, dt=dt_ctrl)
+    # Dla układów o małej ilości RAM (128KB) kompromisem jest horyzont 10-12. 
+    # Daje to 0.2s - 0.24s predykcji, co wystarcza do balansu, a tworzy bardzo mały footprint pamięci!
+    myMPC = MPC(N=2, dt=dt_ctrl)
 
     # Wagi: [X, X_dot, Phi, Phi_dot, Psi, Psi_dot]
     # Używamy tylko wag prędkości (X i Psi) oraz potężnej wagi dla kąta pochylenia

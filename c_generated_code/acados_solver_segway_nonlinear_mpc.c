@@ -423,45 +423,7 @@ void segway_nonlinear_mpc_acados_setup_nlp_in(segway_nonlinear_mpc_solver_capsul
         double* cost_scaling = malloc((N+1)*sizeof(double));
         cost_scaling[0] = 0.02;
         cost_scaling[1] = 0.02;
-        cost_scaling[2] = 0.02;
-        cost_scaling[3] = 0.02;
-        cost_scaling[4] = 0.02;
-        cost_scaling[5] = 0.02;
-        cost_scaling[6] = 0.02;
-        cost_scaling[7] = 0.02;
-        cost_scaling[8] = 0.02;
-        cost_scaling[9] = 0.02;
-        cost_scaling[10] = 0.02;
-        cost_scaling[11] = 0.02;
-        cost_scaling[12] = 0.02;
-        cost_scaling[13] = 0.02;
-        cost_scaling[14] = 0.02;
-        cost_scaling[15] = 0.02;
-        cost_scaling[16] = 0.02;
-        cost_scaling[17] = 0.02;
-        cost_scaling[18] = 0.02;
-        cost_scaling[19] = 0.02;
-        cost_scaling[20] = 0.02;
-        cost_scaling[21] = 0.02;
-        cost_scaling[22] = 0.02;
-        cost_scaling[23] = 0.02;
-        cost_scaling[24] = 0.02;
-        cost_scaling[25] = 0.02;
-        cost_scaling[26] = 0.02;
-        cost_scaling[27] = 0.02;
-        cost_scaling[28] = 0.02;
-        cost_scaling[29] = 0.02;
-        cost_scaling[30] = 0.02;
-        cost_scaling[31] = 0.02;
-        cost_scaling[32] = 0.02;
-        cost_scaling[33] = 0.02;
-        cost_scaling[34] = 0.02;
-        cost_scaling[35] = 0.02;
-        cost_scaling[36] = 0.02;
-        cost_scaling[37] = 0.02;
-        cost_scaling[38] = 0.02;
-        cost_scaling[39] = 0.02;
-        cost_scaling[40] = 1;
+        cost_scaling[2] = 1;
         for (int i = 0; i <= N; i++)
         {
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "scaling", &cost_scaling[i]);
@@ -656,31 +618,6 @@ void segway_nonlinear_mpc_acados_setup_nlp_in(segway_nonlinear_mpc_solver_capsul
     free(lubu);
 
 
-    // set up general constraints for stage 0 to N-1
-    double* D = calloc(NG*NU, sizeof(double));
-    double* C = calloc(NG*NX, sizeof(double));
-    double* lug = calloc(2*NG, sizeof(double));
-    double* lg = lug;
-    double* ug = lug + NG;
-    C[0+NG * 1] = 1;
-    C[0+NG * 5] = -0.1;
-    C[1+NG * 1] = 1;
-    C[1+NG * 5] = 0.1;
-    lg[0] = -3;
-    lg[1] = -3;
-    ug[0] = 3;
-    ug[1] = 3;
-
-    for (int i = 0; i < N; i++)
-    {
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, i, "D", D);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, i, "C", C);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, i, "lg", lg);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, i, "ug", ug);
-    }
-    free(D);
-    free(C);
-    free(lug);
 
 
 
@@ -735,25 +672,6 @@ void segway_nonlinear_mpc_acados_setup_nlp_in(segway_nonlinear_mpc_solver_capsul
     free(lubx_e);
 
 
-    // set up general constraints for last stage
-    double* C_e = calloc(NGN*NX, sizeof(double));
-    double* lug_e = calloc(2*NGN, sizeof(double));
-    double* lg_e = lug_e;
-    double* ug_e = lug_e + NGN;
-    C_e[0+NGN * 1] = 1;
-    C_e[0+NGN * 5] = -0.1;
-    C_e[1+NGN * 1] = 1;
-    C_e[1+NGN * 5] = 0.1;
-    lg_e[0] = -3;
-    ug_e[0] = 3;
-    lg_e[1] = -3;
-    ug_e[1] = 3;
-
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, N, "C", C_e);
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, N, "lg", lg_e);
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, N, "ug", ug_e);
-    free(C_e);
-    free(lug_e);
 
 
 
@@ -820,7 +738,7 @@ static void segway_nonlinear_mpc_acados_create_set_opts(segway_nonlinear_mpc_sol
 
     // set up sim_method_num_stages
     // all sim_method_num_stages are identical
-    int sim_method_num_stages = 4;
+    int sim_method_num_stages = 2;
     for (int i = 0; i < N; i++)
         ocp_nlp_solver_opts_set_at_stage(nlp_config, nlp_opts, i, "dynamics_num_stages", &sim_method_num_stages);
 
@@ -841,7 +759,7 @@ static void segway_nonlinear_mpc_acados_create_set_opts(segway_nonlinear_mpc_sol
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "levenberg_marquardt", &levenberg_marquardt);
 
     /* options QP solver */
-    int qp_solver_cond_N;const int qp_solver_cond_N_ori = 40;
+    int qp_solver_cond_N;const int qp_solver_cond_N_ori = 1;
     qp_solver_cond_N = N < qp_solver_cond_N_ori ? N : qp_solver_cond_N_ori; // use the minimum value here
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_cond_N", &qp_solver_cond_N);
 

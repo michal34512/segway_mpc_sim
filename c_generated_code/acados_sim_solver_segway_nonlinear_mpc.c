@@ -146,7 +146,7 @@ int segway_nonlinear_mpc_acados_sim_create(segway_nonlinear_mpc_sim_solver_capsu
     sim_opts_set(segway_nonlinear_mpc_sim_config, segway_nonlinear_mpc_sim_opts, "collocation_type", &collocation_type);
 
  
-    tmp_int = 4;
+    tmp_int = 2;
     sim_opts_set(segway_nonlinear_mpc_sim_config, segway_nonlinear_mpc_sim_opts, "num_stages", &tmp_int);
     tmp_int = 1;
     sim_opts_set(segway_nonlinear_mpc_sim_config, segway_nonlinear_mpc_sim_opts, "num_steps", &tmp_int);

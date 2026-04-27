@@ -73,8 +73,8 @@ OBJ+= $(OCP_OBJ)
 EXTERNAL_DIR=
 EXTERNAL_LIB=
 
-INCLUDE_PATH = /home/michal/acados/include
-LIB_PATH = /home/michal/acados/lib
+INCLUDE_PATH = C:/Users/micha/Desktop/segway_mpc_sim/acados/include
+LIB_PATH = C:\Users\micha\Desktop\segway_mpc_sim\acados\lib
 
 # preprocessor flags for make's implicit rules
 CPPFLAGS+= -I$(INCLUDE_PATH)
@@ -84,7 +84,7 @@ CPPFLAGS+= -I$(INCLUDE_PATH)/hpipm/include
 
 
 # define the c-compiler flags for make's implicit rules
-CFLAGS = -fPIC -std=c99   -O2
+CFLAGS = -fPIC -std=c99  -O2
 
 # # Debugging
 # CFLAGS += -g3 -fno-diagnostics-show-line-numbers -g
@@ -98,12 +98,12 @@ LDLIBS+= -lacados
 LDLIBS+= -lhpipm
 LDLIBS+= -lblasfeo
 LDLIBS+= -lm
-LDLIBS+= 
+LDLIBS+= -lqpOASES_e    
 
 # libraries
-LIBACADOS_SOLVER=libacados_solver_segway_nonlinear_mpc.so
-LIBACADOS_OCP_SOLVER=libacados_ocp_solver_segway_nonlinear_mpc.so
-LIBACADOS_SIM_SOLVER=lib$(SIM_SRC:.c=.so)
+LIBACADOS_SOLVER=libacados_solver_segway_nonlinear_mpc.dll
+LIBACADOS_OCP_SOLVER=libacados_ocp_solver_segway_nonlinear_mpc.dll
+LIBACADOS_SIM_SOLVER=lib$(SIM_SRC:.c=.dll)
 
 # virtual targets
 .PHONY : all clean
@@ -134,7 +134,7 @@ ocp_cython_c: ocp_shared_lib
 	-o acados_ocp_solver_pyx.c \
 	-I $(INCLUDE_PATH)/../interfaces/acados_template/acados_template \
 	$(INCLUDE_PATH)/../interfaces/acados_template/acados_template/acados_ocp_solver_pyx.pyx \
-	-I /home/michal/segway_mpc_sim/c_generated_code \
+	-I C:\Users\micha\Desktop\segway_mpc_sim\c_generated_code \
 
 ocp_cython_o: ocp_cython_c
 	$(CC) $(ACADOS_FLAGS) -c -O2 \
@@ -144,16 +144,16 @@ ocp_cython_o: ocp_cython_c
 	-I $(INCLUDE_PATH)/blasfeo/include/ \
 	-I $(INCLUDE_PATH)/hpipm/include/ \
 	-I $(INCLUDE_PATH) \
-	-I /home/michal/segway_mpc_sim/.venv/lib/python3.10/site-packages/numpy/_core/include \
-	-I /usr/include/python3.10 \
+	-I C:\Users\micha\Desktop\segway_mpc_sim\.venv\Lib\site-packages\numpy\_core\include \
+	-I C:\Users\micha\AppData\Local\Programs\Python\Python312\Include \
 	acados_ocp_solver_pyx.c \
 
 ocp_cython: ocp_cython_o
 	$(CC) $(ACADOS_FLAGS) -shared \
-	-o acados_ocp_solver_pyx.so \
+	-o acados_ocp_solver_pyx.dll \
 	-Wl,-rpath=$(LIB_PATH) \
 	acados_ocp_solver_pyx.o \
-	$(abspath .)/libacados_ocp_solver_segway_nonlinear_mpc.so \
+	$(abspath .)/libacados_ocp_solver_segway_nonlinear_mpc.dll \
 	$(LDFLAGS) $(LDLIBS)
 
 
@@ -163,7 +163,7 @@ sim_cython_c: sim_shared_lib
 	-o acados_sim_solver_pyx.c \
 	-I $(INCLUDE_PATH)/../interfaces/acados_template/acados_template \
 	$(INCLUDE_PATH)/../interfaces/acados_template/acados_template/acados_sim_solver_pyx.pyx \
-	-I /home/michal/segway_mpc_sim/c_generated_code \
+	-I C:\Users\micha\Desktop\segway_mpc_sim\c_generated_code \
 
 sim_cython_o: sim_cython_c
 	$(CC) $(ACADOS_FLAGS) -c -O2 \
@@ -173,34 +173,34 @@ sim_cython_o: sim_cython_c
 	-I $(INCLUDE_PATH)/blasfeo/include/ \
 	-I $(INCLUDE_PATH)/hpipm/include/ \
 	-I $(INCLUDE_PATH) \
-	-I /home/michal/segway_mpc_sim/.venv/lib/python3.10/site-packages/numpy/_core/include \
-	-I /usr/include/python3.10 \
+	-I C:\Users\micha\Desktop\segway_mpc_sim\.venv\Lib\site-packages\numpy\_core\include \
+	-I C:\Users\micha\AppData\Local\Programs\Python\Python312\Include \
 	acados_sim_solver_pyx.c \
 
 sim_cython: sim_cython_o
 	$(CC) $(ACADOS_FLAGS) -shared \
-	-o acados_sim_solver_pyx.so \
+	-o acados_sim_solver_pyx.dll \
 	-Wl,-rpath=$(LIB_PATH) \
 	acados_sim_solver_pyx.o \
-	$(abspath .)/libacados_sim_solver_segway_nonlinear_mpc.so \
+	$(abspath .)/libacados_sim_solver_segway_nonlinear_mpc.dll \
 	$(LDFLAGS) $(LDLIBS)
 
 clean:
-	$(RM) $(OBJ) $(EX_OBJ) $(EX_SIM_OBJ)
-	$(RM) $(LIBACADOS_SOLVER) $(LIBACADOS_OCP_SOLVER) $(LIBACADOS_SIM_SOLVER)
-	$(RM) $(EX_EXE) $(EX_SIM_EXE)
+	del \Q *.o 2>nul
+	del \Q *.dll 2>nul
+	del \Q main_segway_nonlinear_mpc 2>nul
 clean_ocp_shared_lib:
-	$(RM) $(LIBACADOS_OCP_SOLVER)
-	$(RM) $(OCP_OBJ)
+	del \Q libacados_ocp_solver_segway_nonlinear_mpc.dll 2>nul
+	del \Q acados_solver_segway_nonlinear_mpc.o 2>nul
 
 clean_ocp_cython:
-	$(RM) libacados_ocp_solver_segway_nonlinear_mpc.so
-	$(RM) acados_solver_segway_nonlinear_mpc.o
-	$(RM) acados_ocp_solver_pyx.so
-	$(RM) acados_ocp_solver_pyx.o
+	del \Q libacados_ocp_solver_segway_nonlinear_mpc.dll 2>nul
+	del \Q acados_solver_segway_nonlinear_mpc.o 2>nul
+	del \Q acados_ocp_solver_pyx.dll 2>nul
+	del \Q acados_ocp_solver_pyx.o 2>nul
 
 clean_sim_cython:
-	$(RM) libacados_sim_solver_segway_nonlinear_mpc.so
-	$(RM) acados_sim_solver_segway_nonlinear_mpc.o
-	$(RM) acados_sim_solver_pyx.so
-	$(RM) acados_sim_solver_pyx.o
+	del \Q libacados_sim_solver_segway_nonlinear_mpc.dll 2>nul
+	del \Q acados_sim_solver_segway_nonlinear_mpc.o 2>nul
+	del \Q acados_sim_solver_pyx.dll 2>nul
+	del \Q acados_sim_solver_pyx.o 2>nul

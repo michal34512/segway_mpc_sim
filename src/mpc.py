@@ -129,37 +129,37 @@ class MPC:
         ocp.constraints.lbx_e = np.array([-self.phi_max])
         ocp.constraints.ubx_e = np.array([self.phi_max])
 
-        # Ograniczenia Prędkości Kół jako General Linear Constraints (C * x <= ug)
-        # v_L = X_dot - (L/2)*Psi_dot
-        # v_R = X_dot + (L/2)*Psi_dot
-        C = np.zeros((2, self.nx))
-        C[0, 1] = 1.0
-        C[0, 5] = -self.L / 2.0  # Wzór na prędkość lewego koła
-        C[1, 1] = 1.0
-        C[1, 5] = self.L / 2.0  # Wzór na prędkość prawego koła
-
-        ocp.constraints.C = C
-        ocp.constraints.D = np.zeros((2, self.nu))
-        ocp.constraints.lg = np.array([-self.v_max, -self.v_max])
-        ocp.constraints.ug = np.array([self.v_max, self.v_max])
-
-        ocp.constraints.C_e = C
-        ocp.constraints.lg_e = np.array([-self.v_max, -self.v_max])
-        ocp.constraints.ug_e = np.array([self.v_max, self.v_max])
+        # USUNIĘTO Ograniczenia Prędkości Kół (C * x <= ug)
+        # General Linear Constraints drastycznie zwiększają zapotrzebowanie na pamięć w Acadosie.
+        # Na mikrokontrolerze z RAM = 128KB musimy polegać wyłącznie na limitach 'u' (przyspieszenie) i 'x' (nachylenie).
 
         # Warunek początkowy x0 (aktualizowany na żywo podczas działania MPC)
         ocp.constraints.x0 = np.zeros(self.nx)
 
-        # --- OPCJE SOLVERA ---
+        # --- OPCJE SOLVERA (ZOPTYMALIZOWANE POD RAM / EMBEDDED) ---
         ocp.solver_options.tf = self.N * self.dt
         ocp.solver_options.integrator_type = 'ERK'
+        ocp.solver_options.sim_method_num_stages = 2  # RK2 zamiast domyślnego RK4 (oszczędza pamięć i cykle procesora)
+        ocp.solver_options.sim_method_num_steps = 1
         ocp.solver_options.nlp_solver_type = 'SQP_RTI'
         ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
+        ocp.solver_options.qp_solver_cond_N = max(1, self.N // 2)  # Mniejsze bloki kondensacji (oszczędność RAM przy gęstych macierzach)
         ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
         ocp.solver_options.print_level = 0
 
         # Kompilacja C-code
-        self.solver = AcadosOcpSolver(ocp, json_file='acados_ocp.json')
+        try:
+            self.solver = AcadosOcpSolver(ocp, json_file='acados_ocp.json')
+        except Exception as e:
+            # FIX: MinGW na Windowsie generuje plik z przedrostkiem 'lib', a Acados szuka bez niego
+            import shutil
+            lib_path = os.path.join('c_generated_code', f'libacados_ocp_solver_{model.name}.dll')
+            dll_path = os.path.join('c_generated_code', f'acados_ocp_solver_{model.name}.dll')
+            if os.path.exists(lib_path):
+                shutil.copy(lib_path, dll_path)
+                self.solver = AcadosOcpSolver(ocp, json_file='acados_ocp.json', build=False, generate=False)
+            else:
+                raise e
 
     def setWeights(self, Q_diag, R_diag):
         """ Aktualizuje wagi Q i R. Setup z generowaniem C wykonywany jest dopiero po tym etapie. """
