@@ -32,6 +32,6 @@ W projekcie zdecydowano się na rezygnację z klasycznych regulatorów PID na rz
 - [x] **Analiza parametrów fizycznych (CAD):** Wyznaczenie przybliżonego położenia środka ciężkości robota oraz jego momentów bezwładności względem osi obrotu kół za pomocą oprogramowania CAD.
 - [x] **Modelowanie matematyczne:** Analityczne wyprowadzenie nieliniowych równań ruchu robota w oparciu o zdefiniowany wektor stanu oraz wejścia sterujące (momenty silników).
 - [x] **Środowisko symulacyjne:** Stworzenie symulacji dynamiki robota w języku Python i implementacja algorytmu predykcyjnego z wykorzystaniem solvera *acados*.
-- [ ] **Niskopoziomowa integracja systemu:** Wdrożenie sterownika na fizycznym obiekcie, napisanie sterowników sprzętowych dla silników krokowych oraz płynna obsługa danych z czujnika IMU.
+- [x] **Niskopoziomowa integracja systemu:** Wdrożenie sterownika na fizycznym obiekcie, napisanie sterowników sprzętowych dla silników krokowych oraz płynna obsługa danych z czujnika IMU.
 - [ ] **Stabilizacja pionowa:** Uruchomienie układu regulacji i uzyskanie stabilnego balansowania robota w miejscu.
 - [ ] **Śledzenie trajektorii:** Realizacja kontrolowanego ruchu wzdłuż zadanej ścieżki w oparciu o odometrię (zliczanie zadanych kroków silników).
